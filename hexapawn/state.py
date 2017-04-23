@@ -24,13 +24,10 @@ import numpy as np
 import logging
 from typing import Union, Tuple
 from hexapawn import piece
-
-module_logger = logging.getLogger('hexapawn.board')
-module_logger.setLevel(logging.DEBUG)
-
+import re
 
 class State:
-    def __init__(self, state: Union[str, np.ndarray], turn:str=None):
+    def __init__(self, state: Union[str, np.ndarray], turn: str = None):
         """
         State constructor. Pass it a string as in the project description or pass it a
         numpy array board and a turn.
@@ -40,9 +37,14 @@ class State:
         turn  - Ignored if state is a string, required if state is a numpy array. Must
                 be either 'B' for black or 'W' for white.
         """
-        self.logger = logging.getLogger('hexapawn.board.State')
-        self.logger.setLevel(logging.DEBUG)
+        self.logger = logging.getLogger('root')
+
         if type(state) == str:
+            self.logger.debug(state)
+            self.logger.debug(re.search(r'([B|W]{1})\n(([p|P|.]{3,8})\n){3,8}', state))
+            assert re.search(r'([B|W]{1})\n(([p|P|.]{3,8})\n){3,8}', state)
+            self.logger.debug('Valid state, continuing')
+
             self.state_string = state
             self.board = list(self.state_string.replace('\n', ''))
             self.turn, self.board = self.board[0][0], np.array(self.board[1:]).reshape(3, 3)
@@ -80,7 +82,7 @@ class State:
             if len(attacks) + len(moves) == 0:
                 self.value = -1
 
-    def apply_move(self, on_move_piece:piece, move:Tuple[np.ndarray, np.ndarray]) -> Tuple['State', int]:
+    def apply_move(self, on_move_piece: piece, move: Tuple[np.ndarray, np.ndarray]) -> Tuple['State', int]:
         """
         Apply single move to a board and if the result was a win
         Parameters
@@ -100,5 +102,6 @@ class State:
 
 if __name__ == '__main__':
     import sys
+
     for key in sys.modules.keys():
         print(key)

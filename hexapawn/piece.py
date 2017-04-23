@@ -27,8 +27,7 @@ import hexapawn.state
 
 class Piece:
     def __init__(self, color: str, board_size: Tuple[int, int]):
-        self.logger = logging.getLogger('hexapawn.piece.Piece')
-        self.logger.setLevel(logging.DEBUG)
+        self.logger = logging.getLogger('root')
         self.color = color
         self.board_height, self.board_width = board_size
 
@@ -44,36 +43,45 @@ class Pawn(Piece):
             self.anchor = (self.mask_height // 2 - 1, self.mask_width // 2)
             self.logger.debug("Pawn('B', {}).anchor: {}".format(board_size, self.anchor))
             self.move_mask = np.zeros((self.mask_height, self.mask_width), dtype=np.int)
-            self.logger.debug('\n    anchor[0]: {}\n'
-                              'anchor[0] + 2: {}\n'
-                              'anchor[1] - 1: {}\n'
-                              'anchor[1] + 2: {}'.format(self.anchor[0], self.anchor[0] + 2, self.anchor[1] - 1,
-                                                         self.anchor[1] + 2))
+            self.logger.debug('move_mask slice: ({}:{}, {}:{})'.format(self.anchor[0],
+                                                                       self.anchor[0] + 2,
+                                                                       self.anchor[1] - 1,
+                                                                       self.anchor[1] + 2))
             self.move_mask[self.anchor[0]:self.anchor[0] + 2, self.anchor[1] - 1:self.anchor[1] + 2] += [[0, 1, 0],
                                                                                                          [0, 1, 0]]
-            self.logger.debug("Pawn('B', {}).move_mask: {}".format(board_size, self.move_mask))
+            self.logger.debug("Pawn('B', {}).move_mask: \n{}".format(board_size, self.move_mask))
             self.attack_mask = np.zeros((self.mask_height, self.mask_width), dtype=np.int)
+
+            self.logger.debug('attack_mask slice: ({}:{}, {}:{})'.format(self.anchor[0],
+                                                                         self.anchor[0] + 2,
+                                                                         self.anchor[1] - 1,
+                                                                         self.anchor[1] + 2))
             self.attack_mask[self.anchor[0]:self.anchor[0] + 2, self.anchor[1] - 1:self.anchor[1] + 2] += [[0, 1, 0],
                                                                                                            [1, 0, 1]]
-            self.logger.debug("Pawn('B', {}).attack_mask: {}".format(board_size, self.attack_mask))
+            self.logger.debug("Pawn('B', {}).attack_mask: \n{}".format(board_size, self.attack_mask))
         else:  # color == 'W'
             self.label = 'P'
             self.adversary_label = 'p'
             self.anchor = (self.mask_height // 2, self.mask_width // 2)
             self.logger.debug("Pawn('W', {}).anchor: {}".format(board_size, self.anchor))
             self.move_mask = np.zeros((self.mask_height, self.mask_width), dtype=np.int)
-            self.logger.debug("Pawn('W', {}).move_mask: {}".format(board_size, self.move_mask))
-            self.logger.debug('\nanchor[0] - 1: {}\n'
-                              'anchor[0] + 1: {}\n'
-                              'anchor[1] - 1: {}\n'
-                              'anchor[1] + 2: {}'.format(self.anchor[0] - 1, self.anchor[0] + 1, self.anchor[1] - 1,
-                                                         self.anchor[1] + 2))
+            self.logger.debug('move_mask slice: ({}:{}, {}:{})'.format(self.anchor[0] - 1,
+                                                                       self.anchor[0] + 1,
+                                                                       self.anchor[1] - 1,
+                                                                       self.anchor[1] + 2))
             self.move_mask[self.anchor[0] - 1:self.anchor[0] + 1, self.anchor[1] - 1:self.anchor[1] + 2] += [[0, 1, 0],
                                                                                                              [0, 1, 0]]
+            self.logger.debug("Pawn('W', {}).move_mask: \n{}".format(board_size, self.move_mask))
+
             self.attack_mask = np.zeros((self.mask_height, self.mask_width), dtype=np.int)
-            self.attack_mask[self.anchor[0] - 1:self.anchor[0] + 1, self.anchor[1] - 1:self.anchor[1] + 2] += [
-                [1, 0, 1],
-                [0, 1, 0]]
+            self.logger.debug('attack_mask slice: ({}:{}, {}:{})'.format(self.anchor[0] - 1,
+                                                                         self.anchor[0] + 1,
+                                                                         self.anchor[1] - 1,
+                                                                         self.anchor[1] + 2))
+            self.attack_mask[self.anchor[0] - 1:self.anchor[0] + 1, self.anchor[1] - 1:self.anchor[1] + 2] += \
+                [[1, 0, 1],
+                 [0, 1, 0]]
+            self.logger.debug("Pawn('W', {}).attack_mask: \n{}".format(board_size, self.attack_mask))
 
     def get_move_masks(self, board_location: Tuple[int, int]) -> Tuple[np.ndarray, np.ndarray]:
         top, left = self.anchor[0] - board_location[0], self.anchor[1] - board_location[1]
