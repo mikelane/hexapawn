@@ -1,10 +1,12 @@
 import nose.tools
 import numpy as np
+import subprocess as sp
+
 import hexapawn
 import logging
+import os
 
-tests_logger = logging.getLogger('hexapawn.hexapawn_tests')
-tests_logger.setLevel(logging.DEBUG)
+tests_logger = logging.getLogger('root')
 
 def setup():
     tests_logger.debug('Setting Up')
@@ -41,3 +43,25 @@ def test_get_move_masks():
         assert np.array_equal(a[0], b[0])
         assert np.array_equal(a[1], b[1])
 
+def test_modules():
+    import sys
+
+    for key in sys.modules.keys():
+        print(key)
+
+def test_positions():
+    path = 'tests/positions'
+    data = {}
+    with os.scandir(path) as files:
+        for file in files:
+            if '.out' in file.name:
+                with open('{}/{}'.format(path, file.name), 'r') as f:
+                    data['{}/{}'.format(path, file.name.replace('.out', '.in'))] = f.read()
+    for fn, correct in data.items():
+        yield check_correct, correct, fn
+
+@nose.tools.timed(30)
+def check_correct(correct_value, fn):
+    with open(fn, 'r') as f:
+        result = sp.run(['python3', '/Users/Mike/dev/hexapawn/hexapawn_solver.py', '-f', fn], stdout=sp.PIPE)
+        assert correct_value == result.stdout.decode()

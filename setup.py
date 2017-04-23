@@ -9,7 +9,7 @@ config = {
         'url': 'http://github.com/mikelane/hexapawn/',
         'download_url': 'https://github.com/mikelane/hexapawn.git',
         'author_email': 'mikelane@gmail.com',
-        'version': '0.1',
+        'version': '1.0',
         'install_requires': [
             'nose',
             'numpy'

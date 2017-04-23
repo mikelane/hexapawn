@@ -23,14 +23,16 @@ def setup_custom_logger(name:str, level:int) -> logging.Logger:
 
     logger = logging.getLogger(name=name)
 
-    if level >= 3:
+    if level >= 4:
         logger.setLevel(logging.DEBUG)
-    elif level == 2:
+    elif level == 3:
         logger.setLevel(logging.INFO)
-    elif level == 1:
+    elif level == 2:
         logger.setLevel(logging.WARNING)
-    else:
+    elif level == 1:
         logger.setLevel(logging.ERROR)
+    else:
+        logger.setLevel(logging.CRITICAL)
 
     logger.addHandler(handler)
     return logger

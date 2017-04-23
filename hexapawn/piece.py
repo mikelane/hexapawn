@@ -11,22 +11,24 @@ classes will make a lot more sense.
 """
 
 # Imports
+import logging
+
+import numpy as np
+from typing import Tuple, List
+
+import hexapawn.state
 
 __author__ = "Michael Lane"
 __email__ = "mikelane@gmail.com"
 __copyright__ = "Copyright 2017, Michael Lane"
 __license__ = "MIT"
 
-import logging
-
-import numpy as np
-from typing import Tuple, List
-from functools import lru_cache
-
-import hexapawn.state
-
 
 class Piece:
+    """
+    The Piece class. A Piece has a color and is played on a specific board type.
+    """
+
     def __init__(self, color: str, board_size: Tuple[int, int]):
         self.logger = logging.getLogger('root')
         self.color = color
@@ -34,6 +36,14 @@ class Piece:
 
 
 class Pawn(Piece):
+    """
+    A Pawn is a specific type of piece. Each piece has its own unique move mask. The mask is set up such
+    that the piece mask will span the entire board no matter where the location of the piece on the board
+    is. For pawns, most locations will be 0, but this is fine since the move generation is being done via
+    a logical AND mask. The 0's are all the locations the pawn can't reach, so they shouldn't be
+    considered when generating moves anyhow.
+    """
+
     def __init__(self, color, board_size):
         super().__init__(color, board_size)
         self.mask_height = 2 * (self.board_height - 1)
@@ -84,13 +94,20 @@ class Pawn(Piece):
                  [0, 1, 0]]
             self.logger.debug("Pawn('W', {}).attack_mask: \n{}".format(board_size, self.attack_mask))
 
+    def __hash__(self):
+        return hash(self.color + str(self.move_mask | self.attack_mask))
+
+    def __eq__(self, other):
+        return self.color == other.color and np.array_equal(self.attack_mask | self.attack_mask,
+                                                            other.attack_mask | other.move_mask)
+
     def get_move_masks(self, board_location: Tuple[int, int]) -> Tuple[np.ndarray, np.ndarray]:
         top, left = self.anchor[0] - board_location[0], self.anchor[1] - board_location[1]
         return self.move_mask[top:top + self.board_height, left:left + self.board_width], self.attack_mask[
                                                                                           top:top + self.board_height,
                                                                                           left:left + self.board_width]
 
-    @lru_cache(maxsize=None)
+    # @lru_cache(maxsize=None)
     def get_moves(self, state: hexapawn.state.State) -> Tuple[
         List[Tuple[np.ndarray, np.ndarray]], List[Tuple[np.ndarray, np.ndarray]]]:
         assert state.turn == self.color
@@ -99,8 +116,16 @@ class Pawn(Piece):
         moves = []
 
         for position in state.on_move_locations:
-            move_mask, attack_mask = self.get_move_masks(position)
-            attacks += [(position, move) for move in np.argwhere((attack_mask & state.adversary_mask) == 1)]
+            move_mask, attack_mask = self.get_move_masks(tuple(position))
+            # Numpy's argwhere returns a lists of locations where some comparison is true in a
+            # list from top left to bottom right of the 2D array. If the piece is moving north
+            # to south, you'd want to check the bottom row first. That is what flipud() does.
+            if state.turn == 'B':
+                attacks += [(position, move) for move in
+                            np.flipud(np.argwhere((attack_mask & state.adversary_mask) == 1))]
+            else:  # Moving south to north, the normal argwhere return value is fine.
+                attacks += [(position, move) for move in np.argwhere((attack_mask & state.adversary_mask) == 1)]
+
             moves += [(position, move) for move in np.argwhere((move_mask & state.empty_cells_mask) == 1)]
 
         return (attacks, moves)

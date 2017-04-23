@@ -14,17 +14,18 @@ over bit strings and won't be the worst of both worlds.
 """
 
 # Imports
+import logging
+import re
+
+import numpy as np
+from typing import Union, Tuple
+
+from hexapawn import piece
 
 __author__ = "Michael Lane"
 __email__ = "mikelane@gmail.com"
 __copyright__ = "Copyright 2017, Michael Lane"
 __license__ = "MIT"
-
-import numpy as np
-import logging
-from typing import Union, Tuple
-from hexapawn import piece
-import re
 
 
 class State:
@@ -53,12 +54,12 @@ class State:
             try:
                 assert turn != None and type(turn) == str and turn in 'WB'
             except AssertionError as e:
-                self.logger.error('Assertion error in State constructor: {}'.format(e))
+                self.logger.critical('Assertion error in State constructor: {}'.format(e))
                 raise e
             self.turn = turn
             self.board = state
         else:
-            self.logger.error('State constructor called with something other than a str or np.ndarray!')
+            self.logger.critical('State constructor called with something other than a str or np.ndarray!')
             assert False
         self.opponent = 'W' if self.turn == 'B' else 'B'
         self.value = None
@@ -94,6 +95,9 @@ class State:
     def __ne__(self, other):
         return not np.array_equal(self.board, other.board)
 
+    def mirror(self):
+        return State(np.fliplr(self.board), self.turn)
+
     def apply_move(self, move: Tuple[np.ndarray, np.ndarray]) -> Tuple['State', int]:
         """
         Apply single move to a board and if the result was a win
@@ -109,9 +113,8 @@ class State:
         """
         board = np.copy(self.board)
         self.logger.debug(
-            'Applying {} move {} to label {} on board:\n{}'.format(self.turn, move, self.on_move_label,
-                                                                         board))
-        self.logger.debug('move[0]: {}, board[move[0]]: {}'.format(tuple(move[0]), board[tuple(move[0])]))
+            'Applying {} move {} to label {} on board:\n{}'.format(self.turn, move, self.on_move_label, board))
+        self.logger.debug('tuple(move[0]): {}, board[tuple(move[0])]: {}'.format(tuple(move[0]), board[tuple(move[0])]))
         board[tuple(move[0])] = '.'
         board[tuple(move[1])] = self.on_move_label
         self.logger.info('Updated board: \n{}'.format(board))

@@ -20,16 +20,14 @@ where n is the width of the board.
 """
 
 # Imports
-from typing import Tuple
 
-from hexapawn.piece import Pawn
-from hexapawn.state import State
-import numpy as np
-from datetime import datetime
-import sys
-import log
 import argparse
+import sys
+from datetime import datetime
 from functools import lru_cache
+
+import log
+from hexapawn.state import State
 
 __author__ = "Michael Lane"
 __email__ = "mikelane@gmail.com"
@@ -47,17 +45,29 @@ parser.add_argument('-v', '--verbosity', action='count', default=0,
 args = parser.parse_args()
 
 if args.debug:
-    logger = log.setup_custom_logger('root', level=3)
+    logger = log.setup_custom_logger('root', level=5)
 else:
     logger = log.setup_custom_logger('root', level=args.verbosity)
 
 nodes = 0
+my_cache_hits = 0
+
+# Cache the mirror image. If mirror image states aren't used, this slows things down.
+# However, when there are mirror image states to consider, this speeds things up greatly.
+cache = {}
 
 
 @lru_cache(maxsize=None)  # Automagical
 def get_state_value(state: State) -> int:
     global nodes
+    global cache
+    global my_cache_hits
+    if state.mirror() in cache:
+        my_cache_hits += 1
+        return cache[state.mirror()]
+
     if len(state.moves) == 0:
+        cache[state] = cache[state.mirror()] = -1
         return -1
 
     max_value = -1
@@ -68,24 +78,28 @@ def get_state_value(state: State) -> int:
 
         if result == 1:
             logger.debug('Found a win, returning 1')
+            cache[new_state] = cache[new_state.mirror()] = 1
             return 1
         logger.debug('Win not found, continuing')
 
         val = -get_state_value(new_state)
         max_value = max(max_value, val)
+    cache[state] = cache[state.mirror()] = max_value
     return max_value
 
 
-if args.filename:
-    with open(args.filename, 'r') as f:
-        state = State(f.read())
-else:
-    state = State(sys.stdin.read())
+if __name__ == '__main__':
+    if args.filename:
+        with open(args.filename, 'r') as f:
+            state = State(f.read())
+    else:
+        state = State(sys.stdin.read())
 
-nodes += 1
+    nodes += 1
 
-start = datetime.now()
-result = get_state_value(state)
-print(result)
-logger.info(get_state_value.cache_info())
-logger.info('{} Nodes :: {} seconds'.format(nodes, (datetime.now() - start).total_seconds()))
+    start = datetime.now()
+    result = get_state_value(state)
+    print(result)
+    logger.warning(get_state_value.cache_info())
+    logger.warning('my cache hits: {}'.format(my_cache_hits))
+    logger.warning('{} Nodes :: {} seconds'.format(nodes, (datetime.now() - start).total_seconds()))
