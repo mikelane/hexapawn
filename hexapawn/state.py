@@ -26,6 +26,7 @@ from typing import Union, Tuple
 from hexapawn import piece
 import re
 
+
 class State:
     def __init__(self, state: Union[str, np.ndarray], turn: str = None):
         """
@@ -46,8 +47,8 @@ class State:
             self.logger.debug('Valid state, continuing')
 
             self.state_string = state
-            self.board = list(self.state_string.replace('\n', ''))
-            self.turn, self.board = self.board[0][0], np.array(self.board[1:]).reshape(3, 3)
+            self.turn, *self.board = state.strip().split('\n')
+            self.board = np.array([list(row) for row in self.board])
         elif type(state) == np.ndarray:
             try:
                 assert turn != None and type(turn) == str and turn in 'WB'
@@ -59,30 +60,41 @@ class State:
         else:
             self.logger.error('State constructor called with something other than a str or np.ndarray!')
             assert False
-        # TODO: build str representation
         self.opponent = 'W' if self.turn == 'B' else 'B'
         self.value = None
         self.on_move_pieces = [piece.Pawn(self.turn, self.board.shape)]
 
         self.empty_cells_mask = (self.board == '.').astype(np.int)
         if self.turn == 'W':
-            self.on_move_locations = np.argwhere(self.board == 'P')
-            self.adversary_mask = (self.board == 'p').astype(np.int)
+            self.on_move_label = 'P'
+            self.adversary_label = 'p'
             self.win_row = 0
         else:
-            self.on_move_locations = np.argwhere(self.board == 'p')
-            self.adversary_mask = (self.board == 'P').astype(np.int)
+            self.on_move_label = 'p'
+            self.adversary_label = 'P'
             self.win_row = -1
+
+        self.on_move_locations = np.argwhere(self.board == self.on_move_label)
+        self.adversary_mask = (self.board == self.adversary_label).astype(np.int)
 
         self.attacks = []
         self.moves = []
 
         for piece_object in self.on_move_pieces:
-            attacks, moves = piece_object.get_moves(self)
-            if len(attacks) + len(moves) == 0:
+            self.attacks, self.moves = piece_object.get_moves(self)
+            if len(self.attacks) + len(self.moves) == 0:
                 self.value = -1
 
-    def apply_move(self, on_move_piece: piece, move: Tuple[np.ndarray, np.ndarray]) -> Tuple['State', int]:
+    def __hash__(self):
+        return hash(str(self.board))
+
+    def __eq__(self, other):
+        return np.array_equal(self.board, other.board)
+
+    def __ne__(self, other):
+        return not np.array_equal(self.board, other.board)
+
+    def apply_move(self, move: Tuple[np.ndarray, np.ndarray]) -> Tuple['State', int]:
         """
         Apply single move to a board and if the result was a win
         Parameters
@@ -95,9 +107,15 @@ class State:
         Tuple of new board state and 1 if a win has been detected or a 0 otherwise.
 
         """
-        self.board[move[0]] = '.'
-        self.board[move[1]] = on_move_piece.label
-        return State(self.board, self.opponent), np.any(self.board[self.win_row] == on_move_piece.label).astype(np.int)
+        board = np.copy(self.board)
+        self.logger.debug(
+            'Applying {} move {} to label {} on board:\n{}'.format(self.turn, move, self.on_move_label,
+                                                                         board))
+        self.logger.debug('move[0]: {}, board[move[0]]: {}'.format(tuple(move[0]), board[tuple(move[0])]))
+        board[tuple(move[0])] = '.'
+        board[tuple(move[1])] = self.on_move_label
+        self.logger.info('Updated board: \n{}'.format(board))
+        return State(board, self.opponent), np.any(board[self.win_row] == self.on_move_label).astype(np.int)
 
 
 if __name__ == '__main__':

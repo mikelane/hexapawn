@@ -15,16 +15,22 @@ __copyright__ = "Copyright 2017, Michael Lane"
 __license__ = "MIT"
 
 
-def setup_custom_logger(name:str, debug:bool) -> logging.Logger:
+def setup_custom_logger(name:str, level:int) -> logging.Logger:
     formatter = logging.Formatter(fmt='%(asctime)s - %(levelname)s - %(module)s - %(message)s')
 
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
 
     logger = logging.getLogger(name=name)
-    if debug:
+
+    if level >= 3:
         logger.setLevel(logging.DEBUG)
+    elif level == 2:
+        logger.setLevel(logging.INFO)
+    elif level == 1:
+        logger.setLevel(logging.WARNING)
     else:
         logger.setLevel(logging.ERROR)
+
     logger.addHandler(handler)
     return logger

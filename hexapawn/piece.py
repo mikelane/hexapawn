@@ -21,6 +21,7 @@ import logging
 
 import numpy as np
 from typing import Tuple, List
+from functools import lru_cache
 
 import hexapawn.state
 
@@ -89,6 +90,7 @@ class Pawn(Piece):
                                                                                           top:top + self.board_height,
                                                                                           left:left + self.board_width]
 
+    @lru_cache(maxsize=None)
     def get_moves(self, state: hexapawn.state.State) -> Tuple[
         List[Tuple[np.ndarray, np.ndarray]], List[Tuple[np.ndarray, np.ndarray]]]:
         assert state.turn == self.color
