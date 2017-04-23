@@ -10,7 +10,10 @@ config = {
         'download_url': 'https://github.com/mikelane/hexapawn.git',
         'author_email': 'mikelane@gmail.com',
         'version': '0.1',
-        'install_requires': ['nose'],
+        'install_requires': [
+            'nose',
+            'numpy'
+        ],
         'packages': ['hexapawn'],
         'scripts': [],
         'name': 'hexapawn'
