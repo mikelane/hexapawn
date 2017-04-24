@@ -23,7 +23,7 @@ def test_basic():
 
 def test_state_construct():
     tests_logger.debug('Testing the board constructor')
-    with open('tests/test_input_1.txt', 'r') as f:
+    with open('tests/test1-in.txt', 'r') as f:
         b = hexapawn.state.State(f.read())
     assert b.turn == 'B'
     assert np.array_equal(b.board, np.array([['p', 'p', 'p'], ['.', 'P', '.'], ['P', '.', 'P']]))
