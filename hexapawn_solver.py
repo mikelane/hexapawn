@@ -34,7 +34,8 @@ __email__ = "mikelane@gmail.com"
 __copyright__ = "Copyright 2017, Michael Lane"
 __license__ = "MIT"
 
-parser = argparse.ArgumentParser(description='Hexapawn Solver')
+parser = argparse.ArgumentParser(description='''Hexapawn Solver: This script can handle inputs that come from the 
+command line or from inputs that come from redirected stdin. Please ensure that you are using a python3 interpreter.''')
 parser.add_argument('-f', '--filename', required=False, dest='filename',
                     help='Filename of the text version of the hexapawn board')
 parser.add_argument('--debug', help='Turn on debugging mode', action='store_true')
